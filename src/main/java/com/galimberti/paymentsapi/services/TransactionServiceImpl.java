@@ -39,8 +39,7 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public void removeTransaction(Integer userId, Integer categoryId, Integer transactionId)
             throws PaResourceNotFoundException {
-        // TODO Auto-generated method stub
-        
+        transactionRepository.removeById(userId, categoryId, transactionId);
     }
 
     @Override

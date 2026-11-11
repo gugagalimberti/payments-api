@@ -14,6 +14,7 @@ import com.galimberti.paymentsapi.services.TransactionService;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -58,6 +59,15 @@ public class TransactionResource {
         transactionService.updateTransaction(userId, categoryId, transactionId, transaction);
         Map<String, Boolean> map = new HashMap<>();
         map.put("sucess", true);
+        return new ResponseEntity<>(map, HttpStatus.OK);
+    }
+
+    @DeleteMapping ("/{transactionId}")
+    public ResponseEntity<Map<String, Boolean>> deleteTransaction(HttpServletRequest request, @PathVariable ("categoryId") Integer categoryId, @PathVariable ("transactionId") Integer transactionId) {
+        int userId = (Integer) request.getAttribute("userId");
+        transactionService.removeTransaction(userId, categoryId, transactionId);
+        Map<String, Boolean> map = new HashMap<>();
+        map.put("success", true);
         return new ResponseEntity<>(map, HttpStatus.OK);
     }
 
