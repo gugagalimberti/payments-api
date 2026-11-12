@@ -28,6 +28,8 @@ public class CategoryRepositoryImpl implements CategoryRepository {
             "WHERE C.USER_ID = ? AND C.CATEGORY_ID = ? GROUP BY C.CATEGORY_ID";
     private static final String SQL_CREATE = "insert into pa_categories (category_id, user_id, title, description) values (nextval('pa_categories_seq'), ?, ?, ?)";
     private static final String SQL_UPDATE = "UPDATE PA_CATEGORIES SET TITLE = ?, DESCRIPTION = ? WHERE USER_ID = ? AND CATEGORY_ID = ?";
+    private static final String SQL_DELETE_CATEGORY = "DELETE FROM PA_CATEGORIES where USER_ID = ? AND CATEGORY_ID = ?";
+    private static final String SQL_DELETE_ALL_CATEGORIES = "DELETE FROM PA_TRANSACTIONS where CATEGORY_ID = ?";
 
     @Autowired 
     JdbcTemplate jdbcTemplate;
@@ -79,8 +81,12 @@ public class CategoryRepositoryImpl implements CategoryRepository {
 
     @Override
     public void removeById(Integer userId, Integer categoryId) {
-        // TODO Auto-generated method stub
-        
+        this.removeAllCatTransactions(categoryId);
+        jdbcTemplate.update(SQL_DELETE_CATEGORY, new Object[]{userId, categoryId});
+    }
+
+    private void removeAllCatTransactions(Integer categoryId){
+        jdbcTemplate.update(SQL_DELETE_ALL_CATEGORIES, new Object[]{categoryId});
     }
 
     @Override

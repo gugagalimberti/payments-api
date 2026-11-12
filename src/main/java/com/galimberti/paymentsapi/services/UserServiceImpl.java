@@ -22,7 +22,7 @@ public class UserServiceImpl implements UserService {
     public User registerUser(String firstName, String lastName, String email, String password) throws PaAuthException {
         Pattern pattern = Pattern.compile("^(.+)@(.+)$");
         if(email != null) email = email.toLowerCase();
-        if(!pattern.matcher(email).matches())
+        if(email == null || !pattern.matcher(email).matches())
             throw new PaAuthException("Invalid email format");
         Integer count = userRepository.getCountByemail(email);
         if(count > 0)
