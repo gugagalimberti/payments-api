@@ -2,10 +2,17 @@ spring:
   application:
     name: payments-api
   datasource:
-    url: jdbc:postgresql://localhost:5432/paymentsapidb
-    username: paymentsapi
-    password: password
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/paymentsapidb}
+    username: ${DB_USERNAME:paymentsapi}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
-
   flyway:
     baseline-on-migrate: true
+  web:
+    error:
+      include-message: always
+      include-binding-errors: always
+
+jwt:
+  secret: ${JWT_SECRET}
+  validity-ms: ${JWT_VALIDITY_MS:7200000}   # 2 horas

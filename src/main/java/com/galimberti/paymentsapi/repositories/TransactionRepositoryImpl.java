@@ -72,12 +72,15 @@ public class TransactionRepositoryImpl implements TransactionRepository {
 
     @Override
     public void update(Integer userId, Integer categoryId, Integer transactionId, Transaction transaction)
-            throws PaBadRequestException {
+            throws PaBadRequestException, PaResourceNotFoundException {
+        int count;
         try {
-            jdbcTemplate.update(SQL_UPDATE, new Object[]{transaction.getAmount(), transaction.getNote(), transaction.getTransactionDate(), userId, categoryId, transactionId});
+            count = jdbcTemplate.update(SQL_UPDATE, new Object[]{transaction.getAmount(), transaction.getNote(), transaction.getTransactionDate(), userId, categoryId, transactionId});
         } catch (Exception e) {
             throw new PaBadRequestException("Invalid request");
         }
+        if (count ==0)
+            throw new PaResourceNotFoundException("Transaction not found");
         
     }
 
