@@ -20,6 +20,7 @@ próprias categorias e as transações dentro de cada categoria.
 | Testes          | JUnit 5 + Mockito                                  |
 | Cobertura       | Jacoco                                             |
 | Build           | Maven (wrapper `mvnw` incluso)                     |
+| Container       | Docker (multi-stage, eclipse-temurin 21)           |
 
 ## Arquitetura
 
@@ -140,6 +141,39 @@ do navegador:
 2. Clique em **Authorize** 🔒 e cole **somente o token** (sem a palavra `Bearer`).
 3. Os endpoints protegidos (com cadeado) passam a enviar o token automaticamente.
 
+## Docker
+
+A aplicação pode ser executada em um container, sem precisar de JDK instalado.
+
+### Construir a imagem
+
+```bash
+docker build -t payments-api:0.2 .
+```
+
+O `Dockerfile` usa **multi-stage build**: um estágio com JDK compila o projeto,
+e a imagem final contém apenas o JRE e o `.jar` (~146 MB compactada).
+A aplicação roda com um usuário sem privilégios de root.
+
+> Os testes **não** rodam durante o build da imagem (`-DskipTests`), pois o teste
+> de contexto depende do banco. Rode `./mvnw verify` antes de gerar a imagem.
+
+### Executar o container
+
+Crie um arquivo `.env` na raiz (ele está no `.gitignore` e **não** deve ser versionado):
+
+```
+JWT_SECRET=<chave-gerada>
+DB_PASSWORD=password
+DB_URL=jdbc:postgresql://host.docker.internal:5432/paymentsapidb
+```
+
+E execute:
+
+```bash
+docker run --rm -p 8080:8080 --env-file .env payments-api:0.2
+```
+
 ## Autenticação
 
 1. Cadastre-se em `POST /api/users/register` ou faça login em `POST /api/users/login`.
@@ -259,7 +293,7 @@ banco**. A camada de serviços tem 100% de cobertura de linhas.
 - [x] Testes unitários
 - [x] Cobertura com Jacoco
 - [x] Documentação OpenAPI (Swagger)
-- [ ] Dockerfile da aplicação
+- [x] Dockerfile da aplicação
 - [ ] Execução em container / Kubernetes
 
 ## Pontos de melhoria conhecidos
@@ -274,7 +308,8 @@ banco**. A camada de serviços tem 100% de cobertura de linhas.
   convertem qualquer falha (inclusive banco indisponível) em 400/404, em vez de 500.
 - **Migrações:** o schema ainda é criado pelo script manual `paymentsapi_db.sql`.
   O Flyway está configurado, mas ainda não há migrações em `db/migration`.
-- **Dependências não utilizadas:** os starters de Kafka e Data JPA estão no
-  `pom.xml`, mas o projeto usa JdbcTemplate e não usa Kafka.
 - **Testes de integração:** repositories, controllers e o `AuthFilter` ainda
   não têm testes automatizados (são cobertos apenas pelos testes manuais).
+- **Teste de contexto depende do ambiente:** `PaymentsApiApplicationTests` exige
+  PostgreSQL rodando e `DB_PASSWORD` definido. O ideal é usar Testcontainers
+  para subir um banco descartável durante os testes.
