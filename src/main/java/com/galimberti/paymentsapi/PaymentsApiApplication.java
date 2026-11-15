@@ -1,16 +1,25 @@
 package com.galimberti.paymentsapi;
 
 import org.springframework.web.filter.CorsFilter;
+
+import javax.crypto.SecretKey;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.galimberti.paymentsapi.config.JwtProperties;
 import com.galimberti.paymentsapi.filters.AuthFilter;
 
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+
 @SpringBootApplication
+@ConfigurationPropertiesScan
 public class PaymentsApiApplication {
 
 	public static void main(String[] args) {
@@ -30,13 +39,17 @@ public class PaymentsApiApplication {
 		return registrationBean;
 	}
 
-	@Bean 
-	public FilterRegistrationBean<AuthFilter> filterRegistrationBean(){
+	@Bean
+	public SecretKey jwtSigningKey(JwtProperties jwtProperties) {
+		return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtProperties.secret()));
+	}
+
+	@Bean
+	public FilterRegistrationBean<AuthFilter> filterRegistrationBean(SecretKey jwtSigningKey) {
 		FilterRegistrationBean<AuthFilter> registrationBean = new FilterRegistrationBean<>();
-		AuthFilter authFilter = new AuthFilter();
-		registrationBean.setFilter(authFilter);
+		registrationBean.setFilter(new AuthFilter(jwtSigningKey));
 		registrationBean.addUrlPatterns("/api/categories/*");
-		return  registrationBean;
+		return registrationBean;
 	}
 
 }

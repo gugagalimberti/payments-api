@@ -94,4 +94,17 @@ class UserServiceImplTest {
         // Confere que nada foi criado
         verify(userRepository, never()).create(any(), any(), any(), any());	
     }
+
+    	@Test
+	    void deveValidarUsuarioComEmailEmMinusculo() {
+		// Arrange
+		User usuario = new User(1, "Ana", "Silva", "ana@teste.com", "senhaComHash");
+		when(userRepository.findByEmailAndPassword("ana@teste.com", "123")).thenReturn(usuario);
+
+		// Act
+		User resultado = userService.validateUser("ANA@TESTE.COM", "123");
+
+		// Assert
+		assertSame(usuario, resultado);
+	}
 }

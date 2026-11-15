@@ -14,7 +14,7 @@ public interface TransactionRepository {
 
     Integer create(Integer userId, Integer categoryId, Double amount, String note, Long transactionDate) throws PaBadRequestException;
 
-    void update(Integer userId, Integer categoryId, Integer transactionId, Transaction transaction) throws PaBadRequestException;
+    void update(Integer userId, Integer categoryId, Integer transactionId, Transaction transaction) throws PaBadRequestException, PaResourceNotFoundException;
 
     void removeById(Integer userId, Integer categoryId, Integer transactionId) throws PaResourceNotFoundException;
 }
