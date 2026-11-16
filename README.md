@@ -14,7 +14,6 @@ próprias categorias e as transações dentro de cada categoria.
 | Linguagem       | Java 21                                            |
 | Framework       | Spring Boot 4.1.2 (Web MVC, Actuator, Validation)  |
 | Persistência    | PostgreSQL + JdbcTemplate                          |
-| Migrações       | Flyway                                             |
 | Autenticação    | JWT (jjwt 0.12.6) + senhas com BCrypt              |
 | Documentação    | OpenAPI 3 com springdoc-openapi 3.2 (Swagger UI)   |
 | Testes          | JUnit 5 + Mockito                                  |

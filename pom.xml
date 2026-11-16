@@ -11,21 +11,8 @@
 	<groupId>com.galimberti</groupId>
 	<artifactId>payments-api</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
-	<url/>
-	<licenses>
-		<license/>
-	</licenses>
-	<developers>
-		<developer/>
-	</developers>
-	<scm>
-		<connection/>
-		<developerConnection/>
-		<tag/>
-		<url/>
-	</scm>
+	<name>payments-api</name>
+	<description>API REST de controle de despesas com Spring Boot, JWT e PostgreSQL</description>
 	<properties>
 		<java.version>21</java.version>
 	</properties>
