@@ -1,6 +1,6 @@
 # payments-api
 
-API REST para controle de despesas pessoais, organizadas por categorias.
+API REST para controle de pagamentos, organizadas por categorias.
 Cada usuário se cadastra, faz login (recebendo um token JWT) e gerencia suas
 próprias categorias e as transações dentro de cada categoria.
 
