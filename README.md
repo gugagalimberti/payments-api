@@ -21,6 +21,7 @@ próprias categorias e as transações dentro de cada categoria.
 | Cobertura       | Jacoco                                             |
 | Build           | Maven (wrapper `mvnw` incluso)                     |
 | Container       | Docker (multi-stage, eclipse-temurin 21)           |
+| Orquestração    | Kubernetes (Deployment, Service, ConfigMap, Secret)|
 
 ## Arquitetura
 
@@ -35,6 +36,11 @@ domain/        → Entidades: User, Category, Transaction
 config/        → Propriedades do JWT e configuração do OpenAPI
 exceptions/    → Exceções mapeadas para status HTTP (400, 401, 404)
 filters/       → AuthFilter: valida o token JWT nas rotas protegidas
+
+Na raiz do projeto:
+
+Dockerfile     → Imagem da aplicação (multi-stage, camadas do Spring Boot)
+k8s/           → Manifestos Kubernetes (Namespace, ConfigMap, Deployment, Service)
 ```
 
 ## Pré-requisitos
@@ -148,7 +154,7 @@ A aplicação pode ser executada em um container, sem precisar de JDK instalado.
 ### Construir a imagem
 
 ```bash
-docker build -t payments-api:0.2 .
+docker build -t payments-api:0.4 .
 ```
 
 O `Dockerfile` usa **multi-stage build**: um estágio com JDK compila o projeto,
@@ -171,8 +177,103 @@ DB_URL=jdbc:postgresql://host.docker.internal:5432/paymentsapidb
 E execute:
 
 ```bash
-docker run --rm -p 8080:8080 --env-file .env payments-api:0.2
+docker run --rm -p 8080:8080 --env-file .env payments-api:0.4
 ```
+
+## Kubernetes
+
+A pasta `k8s/` contém os manifestos para executar a aplicação em um cluster
+Kubernetes. Os exemplos abaixo usam o Kubernetes embutido no **Docker Desktop**,
+que enxerga as imagens geradas localmente com `docker build`, sem precisar de registry.
+
+### Recursos criados
+
+| Arquivo                  | Objeto       | Descrição                                                     |
+|--------------------------|--------------|---------------------------------------------------------------|
+| `00-namespace.yaml`      | Namespace    | `payments`: isola todos os objetos do projeto                 |
+| `10-configmap.yaml`      | ConfigMap    | Configurações não sensíveis (`DB_URL`, `DB_USERNAME`)         |
+| `20-deployment.yaml`     | Deployment   | 2 réplicas da aplicação, com limites de recursos e probes de saúde |
+| `30-service.yaml`        | Service      | `LoadBalancer` na porta 8080, distribuindo o tráfego entre os Pods |
+| *(criado via comando)*   | Secret       | `JWT_SECRET` e `DB_PASSWORD` (**não é versionado**)           |
+
+As variáveis do ConfigMap e do Secret são injetadas no container como variáveis
+de ambiente (`envFrom`), as mesmas lidas pelo `application.yaml`. A aplicação
+não precisa de nenhuma alteração para rodar no cluster.
+
+### Pré-requisitos
+
+1. Docker Desktop → **Settings** → **Kubernetes** → **Enable Kubernetes**.
+2. Verificar o cluster:
+
+```bash
+kubectl config get-contexts   # contexto "docker-desktop" ativo
+kubectl get nodes             # nó com STATUS "Ready"
+```
+3. Gerar a imagem com a tag usada no `20-deployment.yaml`:
+
+```bash
+docker build -t payments-api:0.4 .
+```
+
+### Deploy
+
+```bash
+# 1. Namespace
+kubectl apply -f k8s/00-namespace.yaml
+
+# 2. Secret (valores sensíveis, fora do repositório)
+kubectl create secret generic payments-api-secrets -n payments \
+  --from-literal=JWT_SECRET="<chave-gerada>" \
+  --from-literal=DB_PASSWORD="password"
+
+# 3. Demais recursos
+kubectl apply -f k8s/
+```
+
+Aguarde os Pods ficarem prontos (`READY 1/1`):
+
+```bash
+kubectl get pods -n payments -w
+```
+
+A API e o Swagger UI ficam disponíveis em `http://localhost:8080`, servidos pelo cluster.
+
+### Probes de saúde
+O Deployment usa os endpoints do **Spring Boot Actuator**, ativados
+automaticamente quando a aplicação detecta que está rodando no Kubernetes:
+
+| Probe       | Endpoint                       | Efeito quando falha                                        |
+|-------------|--------------------------------|------------------------------------------------------------|
+| Readiness   | `/actuator/health/readiness`   | O Pod deixa de receber tráfego do Service                  |
+| Liveness    | `/actuator/health/liveness`    | O Kubernetes reinicia o container                          |
+
+### Operações
+
+| Ação                         | Comando                                                         |
+|------------------------------|-----------------------------------------------------------------|
+| Visão geral                  | `kubectl get all -n payments`                                   |
+| Logs de todos os Pods        | `kubectl logs -n payments -l app=payments-api --prefix -f`      |
+| Diagnosticar um Pod          | `kubectl describe pod -n payments <pod>` (seção **Events**)     |
+| Acompanhar uma atualização   | `kubectl rollout status deploy/payments-api -n payments`        |
+| Histórico de versões         | `kubectl rollout history deploy/payments-api -n payments`       |
+| Voltar à versão anterior     | `kubectl rollout undo deploy/payments-api -n payments`          |
+| Remover tudo                 | `kubectl delete namespace payments`                             |
+
+**Escalar:** altere `replicas` no `k8s/20-deployment.yaml` e reaplique com
+`kubectl apply -f k8s/20-deployment.yaml`. Os manifestos versionados são a
+fonte da verdade, por isso prefira alterar o YAML a usar `kubectl scale`.
+
+**Publicar uma nova versão:**
+
+```bash
+docker build -t payments-api:<nova-tag> .
+# atualize "image:" no k8s/20-deployment.yaml para a nova tag
+kubectl apply -f k8s/20-deployment.yaml
+kubectl rollout status deploy/payments-api -n payments
+```
+A aplicação pode rodar com várias réplicas porque é **stateless**: a autenticação
+usa JWT (qualquer Pod valida o token com o mesmo `JWT_SECRET`) e os dados ficam
+no PostgreSQL compartilhado.
 
 ## Autenticação
 
@@ -294,7 +395,7 @@ banco**. A camada de serviços tem 100% de cobertura de linhas.
 - [x] Cobertura com Jacoco
 - [x] Documentação OpenAPI (Swagger)
 - [x] Dockerfile da aplicação
-- [ ] Execução em container / Kubernetes
+- [x] Execução em container / Kubernetes
 
 ## Pontos de melhoria conhecidos
 
