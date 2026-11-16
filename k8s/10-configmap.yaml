@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: payments-api-config
+  namespace: payments
+data:
+  DB_URL: "jdbc:postgresql://host.docker.internal:5432/paymentsapidb"
+  DB_USERNAME: "paymentsapi"
